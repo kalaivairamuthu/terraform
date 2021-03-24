@@ -1,0 +1,52 @@
+resource "null_resource" "stop_instance"{
+
+  provisioner "local-exec" {
+    command = "export AWS_ACCESS_KEY_ID=${var.AWS_ACCESS_KEY_ID}; export AWS_SECRET_ACCESS_KEY=${var.AWS_SECRET_ACCESS_KEY}; export AWS_DEFAULT_REGION=${var.aws_region}; aws ec2 stop-instances --instance-ids ${var.Instanceid}"
+  }
+  provisioner "local-exec" {
+    command = "sleep 60"
+  }
+
+}
+
+resource "local_file" "userdata_ps1" {
+  depends_on = [null_resource.stop_instance]
+  content = templatefile("scripts/user_data.ps1.tmpl", {
+    admin_user               = var.admin_user
+    admin_password           = var.admin_password
+    hostname                 = var.hostname
+    }
+  )
+  filename = "scripts/user_data.ps1"
+}
+
+resource "null_resource" "Encode_Userdata" {
+  depends_on = [local_file.userdata_ps1]
+  provisioner "local-exec" {
+    command = "base64 -i scripts/user_data.ps1 > scripts/user_data_base64.ps1"  
+  }
+}
+
+
+
+resource "null_resource" "Edit_Userdata" {
+  depends_on = [null_resource.Encode_Userdata]
+  provisioner "local-exec" {
+    command = "export AWS_ACCESS_KEY_ID=${var.AWS_ACCESS_KEY_ID}; export AWS_SECRET_ACCESS_KEY=${var.AWS_SECRET_ACCESS_KEY}; export AWS_DEFAULT_REGION=${var.aws_region}; aws ec2 modify-instance-attribute --attribute userData --value file://scripts/user_data_base64.ps1  --instance-id ${var.Instanceid}"
+  }
+  provisioner "local-exec" {
+    command = "sleep 30"
+  }
+
+}
+
+resource "null_resource" "start_instance"{
+  depends_on = [null_resource.Edit_Userdata]
+  provisioner "local-exec" {
+    command = "export AWS_ACCESS_KEY_ID=${var.AWS_ACCESS_KEY_ID}; export AWS_SECRET_ACCESS_KEY=${var.AWS_SECRET_ACCESS_KEY}; export AWS_DEFAULT_REGION=${var.aws_region}; aws ec2 start-instances --instance-ids ${var.Instanceid}"
+  }
+  provisioner "local-exec" {
+    command = "sleep 60"
+  }
+}
+
