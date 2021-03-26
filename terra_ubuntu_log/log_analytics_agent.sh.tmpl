@@ -1,0 +1,6 @@
+#!/bin/bash
+# Download the installation package
+sudo wget https://raw.githubusercontent.com/Microsoft/OMS-Agent-for-Linux/master/installer/scripts/onboard_agent.sh && sh onboard_agent.sh -w "${Workspace_Id} -s "${Workspace_Key}
+
+# Run connect command
+sudo /opt/microsoft/omsagent/bin/service_control restart "${Workspace_Id}"
