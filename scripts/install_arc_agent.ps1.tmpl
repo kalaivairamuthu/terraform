@@ -1,9 +1,9 @@
 param ($servicePrincipalAppId, $servicePrincipalTenantId, $servicePrincipalSecret)
 
 # These settings will be replaced by the portal when the script is generated
-$subId = "b2b011ba-57e6-42aa-9768-1e2ed6408194"
-$resourceGroup = "Arc-GCP-SQL-Demo1234"
-$location = "eastus"
+$subId = "${subId}"
+$resourceGroup = "${resourceGroup}"
+$location = "${location}"
 $proxy=""
 $resourceTags= @{"Project"="jumpstart_azure_arc_sql"}
 
@@ -14,9 +14,9 @@ $resourceTags= @{"Project"="jumpstart_azure_arc_sql"}
 #
 # For security purposes, passwords should be stored in encrypted files as secure strings
 #
-$servicePrincipalAppId = '1744a508-a8e9-4316-9da6-ff347d398093'
-$servicePrincipalTenantId = 'f319ec31-b1f9-47ed-a2ac-dbc1a7031407'
-$servicePrincipalSecret = 'X-wtO6_SQwu2h1-K1-grxR-tUyD2pfJtb9'
+$servicePrincipalAppId = '${servicePrincipalAppId}'
+$servicePrincipalTenantId = '${servicePrincipalTenantId}'
+$servicePrincipalSecret = '${servicePrincipalSecret}'
 
 
 $unattended = $servicePrincipalAppId -And $servicePrincipalTenantId -And $servicePrincipalSecret

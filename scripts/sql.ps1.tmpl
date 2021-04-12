@@ -1,4 +1,5 @@
-$admin_user = "Administrator"
+
+$admin_user = "${admin_user}"
 
 $chocolateyAppList = "az.powershell,azure-cli,sql-server-management-studio"
 
@@ -69,21 +70,21 @@ Write-Host "Onboarding to Azure Arc"
 Invoke-Expression "C:\tmp\install_arc_agent.ps1"
 
 Write-Host "I am deploying Azure Log Analytics workspace and installing the MMA agent. This can take ~10min, hold tight..."
-$servicePrincipalAppId = "1744a508-a8e9-4316-9da6-ff347d398093"
-$servicePrincipalTenantId = "f319ec31-b1f9-47ed-a2ac-dbc1a7031407"
-$servicePrincipalSecret = "X-wtO6_SQwu2h1-K1-grxR-tUyD2pfJtb9"
+$servicePrincipalAppId = "${servicePrincipalAppId}"
+$servicePrincipalTenantId = "${servicePrincipalTenantId}"
+$servicePrincipalSecret = "${servicePrincipalSecret}"
 az login --service-principal --username $servicePrincipalAppId --password $servicePrincipalSecret --tenant $servicePrincipalTenantId
 
 # Set Log Analytics Workspace Environment Variables
-$resourceGroup = "Arc-GCP-SQL-Demo1234"
-$WorkspaceName = "log-analytics-" + (Get-Random -Maximum 99999)
-$Location = "eastus"
+$resourceGroup = "${resourceGroup}"
+$WorkspaceName = "${workspaceName}"
+$Location = "${location}"
 
 # Get the resource group
 Get-AzResourceGroup -Name $resourceGroup -ErrorAction Stop -Verbose
 
 # Create the workspace
-New-AzOperationalInsightsWorkspace -Location $Location -Name $WorkspaceName -Sku Standard -ResourceGroupName $resourceGroup -Verbose
+#New-AzOperationalInsightsWorkspace -Location $Location -Name $WorkspaceName -Sku Standard -ResourceGroupName $resourceGroup -Verbose
 
 Write-Host "Enabling Log Analytics Solutions"
 $Solutions = "Security", "Updates", "SQLAssessment"
@@ -92,8 +93,11 @@ foreach ($solution in $Solutions) {
 }
 
 # Get the workspace ID and Key
-$workspaceId = $(az resource show --resource-group $resourceGroup --name $WorkspaceName --resource-type "Microsoft.OperationalInsights/workspaces" --query properties.customerId -o tsv)
-$workspaceKey = $(az monitor log-analytics workspace get-shared-keys --resource-group $resourceGroup --workspace-name $WorkspaceName --query primarySharedKey -o tsv)
+$workspaceId = "${workspaceId}"
+$workspaceKey = "${workspaceKey}"
+
+#$workspaceId = $(az resource show --resource-group $resourceGroup --name $WorkspaceName --resource-type "Microsoft.OperationalInsights/workspaces" --query properties.customerId -o tsv)
+#$workspaceKey = $(az monitor log-analytics workspace get-shared-keys --resource-group $resourceGroup --workspace-name $WorkspaceName --query primarySharedKey -o tsv)
 
 # Deploy MMA Azure Extension ARM Template
 New-AzResourceGroupDeployment -Name MMA `
@@ -109,17 +113,17 @@ Invoke-WebRequest "https://github.com/microsoft/azure_arc/raw/main/azure_arc_sql
 Expand-Archive "C:\tmp\Microsoft.PowerShell.Oms.Assessments.zip" -DestinationPath 'C:\Program Files\Microsoft Monitoring Agent\Agent\PowerShell'
 $env:PSModulePath = $env:PSModulePath + ";C:\Program Files\'Microsoft Monitoring Agent\Agent\PowerShell\Microsoft.PowerShell.Oms.Assessments\"
 Import-Module $env:ProgramFiles\'Microsoft Monitoring Agent\Agent\PowerShell\Microsoft.PowerShell.Oms.Assessments\Microsoft.PowerShell.Oms.Assessments.dll'
-$SecureString = ConvertTo-SecureString 'QPMG.?gvMcl$iTRdpuMfL@rD;4zr!fiy' -AsPlainText -Force
+$SecureString = ConvertTo-SecureString '${admin_password}' -AsPlainText -Force
 Add-SQLAssessmentTask -SQLServerName $env:computername -WorkingDirectory "C:\sql_assessment\work_dir" -RunWithManagedServiceAccount $False -ScheduledTaskUsername $env:USERNAME -ScheduledTaskPassword $SecureString
 
 Unregister-ScheduledTask -TaskName "LogonScript" -Confirm:$False
-Stop-Process -Name powershell -Force
+#Stop-Process -Name powershell -Force
 '@ > C:\tmp\LogonScript.ps1
 
 # Creating LogonScript Windows Scheduled Task
 $Trigger = New-ScheduledTaskTrigger -AtLogOn
 $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument 'C:\tmp\LogonScript.ps1'
-Register-ScheduledTask -TaskName "LogonScript" -Trigger $Trigger -User "Administrator" -Action $Action -RunLevel "Highest" -Force
+Register-ScheduledTask -TaskName "LogonScript" -Trigger $Trigger -User "${admin_user}" -Action $Action -RunLevel "Highest" -Force
 
 # Disable Windows Firewall
 Write-Host "Disabling Windows Firewall"
