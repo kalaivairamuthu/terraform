@@ -1,0 +1,38 @@
+#!/bin/bash
+# Download the installation package
+sudo apt install wget
+wget https://aka.ms/azcmagent -O ~/install_linux_azcmagent.sh
+
+# Install the hybrid agent
+sudo bash ~/install_linux_azcmagent.sh
+
+#Getting the instance-id
+Resource_id=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)
+
+#Installing Azure-cli
+
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+
+# Run connect command
+sudo azcmagent connect \
+  --service-principal-id "${client_id}" \
+  --service-principal-secret "${client_secret}" \
+  --tenant-id "${tenant_id}" \
+  --subscription-id "${subscription_id}" \
+  --location "${location}" \
+  --resource-group "${resourceGroup}" \
+
+
+#Installing Azure-cli command
+az login --service-principal -u "${client_id}" -p "${client_secret}" --tenant "${tenant_id}"
+
+
+# Setup the tags
+export awsResourceGroup="${resourceGroup}"
+export awsMachineName="$(hostname)"
+export awsMachineResourceId="$(az resource show --resource-group $awsResourceGroup --name $awsMachineName --resource-type "Microsoft.HybridCompute/machines" --query id)"
+export awsMachineResourceId="$(echo $awsMachineResourceId | tr -d "\"" | tr -d '\r')"
+az resource tag --ids $awsMachineResourceId --tags "cs_service"="AWS","cs_resource_id"="$Resource_id"
+#az resource tag --ids $awsMachineResourceId --tags "cs_resource_id"="$(Resource_id)"
+
